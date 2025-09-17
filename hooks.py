@@ -2,7 +2,7 @@ import re
 import requests
 from asyncio import run, Task, create_task, to_thread
 import datetime
-from collections.abc import Coroutine
+
 
 class Bot:
     def __init__(self, url: str) -> None:
@@ -93,6 +93,7 @@ class Bot:
                                    f" Mayday took her meds at {took_now[1]} :3"))
 
         try:
+            # noinspection PyUnboundLocalVariable
             return await take_meds_task, funfact_task
         except UnboundLocalError:
             return await take_meds_task
