@@ -12,7 +12,7 @@ class Bot:
             self._top_level_domain: str = re.search("(.com)", url).group()
             self._slug: str = re.search("(/api/webhooks)" ,url).group()
             self._hook_number: str = re.search(r"(/\d{19})", url).group()
-            self._hook_id: str = re.search(r"(/\w{68})", url).group()
+            self._hook_id: str = re.search(r"(/)(\w|-){68}", url).group()
 
         except AttributeError:
             raise Exception("The URL provided is not a valid Discord webhook")
@@ -94,7 +94,7 @@ class Bot:
 
         try:
             # noinspection PyUnboundLocalVariable
-            return await take_meds_task, funfact_task
+            return await take_meds_task, await funfact_task
         except UnboundLocalError:
             return await take_meds_task
 
