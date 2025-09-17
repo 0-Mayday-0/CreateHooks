@@ -1,6 +1,7 @@
 import re
 import requests
 from asyncio import run, Task, create_task, to_thread
+import datetime
 from collections.abc import Coroutine
 
 class Bot:
@@ -24,8 +25,77 @@ class Bot:
         response: requests.Response = await to_thread(requests.post, self._assemble_url, data={'content': message})
         return response
 
-    def take_meds(self):
-        raise NotImplementedError
+    @staticmethod
+    def _prompt_current_time() -> tuple[bool, str]:
+        user_invalid: bool = True
+        valid_inputs: list[str] = ['0', '1']
+
+        while user_invalid:
+            current_time: datetime.datetime = datetime.datetime.now()
+            user_now: str = input(f"Hiya! Did you take your meds at {current_time.strftime('%H:%M')}? [0/1]: ")
+
+            user_invalid = user_now not in valid_inputs
+
+            if user_invalid:
+                print("\nInvalid input. Please try again.\n")
+
+        # noinspection PyUnboundLocalVariable
+        return bool(int(user_now)), current_time.strftime('%H:%M')
+
+    @staticmethod
+    def _prompt_actual_time() -> str:
+        user_invalid: bool = True
+        valid_pattern: re.Pattern = re.compile(r"\d{2}:\d{2}")
+
+        while user_invalid:
+            user_actual: str = input("What time did you take your meds? [xx:yy]: ")
+
+            user_invalid = not bool(re.search(valid_pattern, user_actual))
+
+            if user_invalid:
+                print("\nInvalid input. Please try again.\n")
+
+        #noinspection PyUnboundLocalVariable
+        return user_actual
+
+    @staticmethod
+    def _prompt_funfact() -> str:
+        user_in: str = input("Do you want to send a fun fact? Leave blank to skip: ")
+
+        return user_in
+
+    async def take_meds(self):
+        took_now: tuple[bool, str] = self._prompt_current_time()
+        current_date: datetime.datetime = datetime.datetime.today()
+        suffixes: list[str] = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th']
+
+        funfact_in: str = self._prompt_funfact()
+
+        if funfact_in:
+            funfact_task: Task[requests.Response] = create_task(
+                self._send_message(f"Mayday fun fact of the day: {funfact_in}"))
+
+
+        if not took_now[0]:
+            actual_time: str = self._prompt_actual_time()
+            take_meds_task: Task[requests.Response] = create_task(
+                self._send_message(f"Good {current_date.strftime('%A')}!"
+                                   f" Today is the {current_date.strftime('%d')}"
+                                   f"{suffixes[int(current_date.strftime('%d')[-1])]},"
+                                   f" Mayday took her meds at {actual_time} :3"))
+
+
+        else:
+            take_meds_task: Task[requests.Response] = create_task(
+                self._send_message(f"Good {current_date.strftime('%A')}!"
+                                   f" Today is the {current_date.strftime('%d')}"
+                                   f"{suffixes[int(current_date.strftime('%d')[-1])]},"
+                                   f" Mayday took her meds at {took_now[1]} :3"))
+
+        try:
+            return await take_meds_task, funfact_task
+        except UnboundLocalError:
+            return await take_meds_task
 
     def __repr__(self) -> str:
         return f"Bot({self._hook_number.replace('/', '')})"
@@ -36,9 +106,7 @@ class Bot:
 async def main():
     testbot: Bot = Bot("https://discord.com/api/webhooks/1274408342026190932/YzDllT6M0qpUO02kLNniXCc2GSqAagTeQqFGOoupDbxL_LRuWwcKQduyi9uRt_9jBFA8")
 
-    msg_task: Task[requests.Response] = create_task(testbot._send_message("Hello World!"))
-
-    print(await msg_task)
+    print(await testbot.take_meds())
 
 if __name__ == '__main__':
     run(main())
