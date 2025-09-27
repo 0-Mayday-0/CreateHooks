@@ -7,15 +7,16 @@ import datetime
 class Bot:
     def __init__(self, url: str) -> None:
         try:
-            self._protocol: str = re.search("(https:)", url).group()
-            self._root_domain: str = re.search("(//discord)", url).group()
-            self._top_level_domain: str = re.search("(.com)", url).group()
-            self._slug: str = re.search("(/api/webhooks)" ,url).group()
-            self._hook_number: str = re.search(r"(/\d{19})", url).group()
-            self._hook_id: str = re.search(r"(/)(\w|-){68}", url).group()
+
+            (self._protocol,
+             self._root_domain,
+             self._top_level_domain,
+             self._slug,
+             self._hook_number,
+             self._hook_id) = re.search(r"(https:)(//discord)(.com)(/api/webhooks)(/\d{19})(/[\w-]{68})", url).groups()
 
         except AttributeError:
-            raise Exception("The URL provided is not a valid Discord webhook")
+            raise ConnectionError("The URL provided is not a valid Discord webhook")
 
     @property
     def _assemble_url(self) -> str:
